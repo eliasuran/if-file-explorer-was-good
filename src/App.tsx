@@ -1,12 +1,15 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { useEffect, useState } from 'react';
+import { FileData } from './lib/types';
 
 function App() {
   const [showDotFiles, setShowDotFiles] = useState(false);
-  const [files, setFiles] = useState([] as string[][]);
+  const [files, setFiles] = useState([] as FileData[]);
 
   useEffect(() => {
-    invoke('read_fs').then((files) => setFiles(files as string[][]));
+    invoke('read_fs')
+      .then((files) => setFiles(files as FileData[]))
+      .catch((err) => console.log(err));
   }, []);
   return (
     <main>
@@ -17,9 +20,11 @@ function App() {
         {files.map((file) => (
           <>
             {showDotFiles ? (
-              <span>{file[0]}</span>
+              <span>{file.file_path}</span>
             ) : (
-              file[0].split('/')[3][0] !== '.' && <span>{file[0]}</span>
+              file.file_path.split('/')[3][0] !== '.' && (
+                <span>{file.file_path}</span>
+              )
             )}
           </>
         ))}

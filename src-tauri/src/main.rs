@@ -3,26 +3,53 @@
 
 use std::{fs::read_dir, path::PathBuf};
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
+use serde::Serialize;
+
+#[derive(Serialize)]
+struct FileData {
+    file_path: String,
+    file_type: String,
+}
+
 #[tauri::command]
-fn read_fs() -> Vec<(String, String)> {
+fn read_fs() -> Result<Vec<FileData>, String> {
     let path_buf = PathBuf::from(r"/Users/elura001/");
 
-    let mut root: Vec<(String, String)> = vec![];
+    let mut root: Vec<FileData> = vec![];
 
-    for entry in read_dir(path_buf).unwrap() {
-        let item = entry.unwrap();
+    let dirs = match read_dir(path_buf) {
+        Ok(v) => v,
+        Err(e) => return Err(String::from(format!("Error reading root {}", e))),
+    };
+
+    for entry in dirs {
+        let item = match entry {
+            Ok(v) => v,
+            Err(e) => return Err(String::from(format!("Error getting entry in dir: {}", e))),
+        };
         let file_path = item.path().to_str().unwrap_or("ERROR").to_string();
         let file_type: String;
-        if item.file_type().unwrap().is_dir() {
-            file_type = String::from("dir")
-        } else {
-            file_type = String::from("file")
+        match item.file_type() {
+            Ok(v) => {
+                if v.is_dir() {
+                    file_type = String::from("dir")
+                } else {
+                    file_type = String::from("file")
+                }
+            }
+            Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
         }
-        root.push((file_path, file_type));
+        let file = FileData {
+            file_path,
+            file_type,
+        };
+        root.push(file);
     }
-    root
+    Ok(root)
 }
+
+#[tauri::command]
+fn open_dir() {}
 
 fn main() {
     tauri::Builder::default()
