@@ -22,9 +22,7 @@ function App() {
             {showDotFiles ? (
               <span>{file.file_path}</span>
             ) : (
-              file.file_path.split('/')[3][0] !== '.' && (
-                <span>{file.file_path}</span>
-              )
+              !file.is_dot_file && <span>{file.file_path}</span>
             )}
           </>
         ))}

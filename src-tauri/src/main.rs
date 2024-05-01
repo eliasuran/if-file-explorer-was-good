@@ -9,13 +9,14 @@ use serde::Serialize;
 struct FileData {
     file_path: String,
     file_type: String,
+    is_dot_file: bool,
 }
 
 #[tauri::command]
 fn read_fs() -> Result<Vec<FileData>, String> {
     let path_buf = PathBuf::from(r"/Users/elura001/");
 
-    let mut root: Vec<FileData> = vec![];
+    let mut all_files: Vec<FileData> = vec![];
 
     let dirs = match read_dir(path_buf) {
         Ok(v) => v,
@@ -28,28 +29,43 @@ fn read_fs() -> Result<Vec<FileData>, String> {
             Err(e) => return Err(String::from(format!("Error getting entry in dir: {}", e))),
         };
         let file_path = item.path().to_str().unwrap_or("ERROR").to_string();
+
         let file_type: String;
-        match item.file_type() {
-            Ok(v) => {
-                if v.is_dir() {
-                    file_type = String::from("dir")
-                } else {
-                    file_type = String::from("file")
-                }
-            }
+        let check_file_type = match item.file_type() {
+            Ok(v) => v,
             Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
+        };
+        if check_file_type.is_dir() {
+            file_type = String::from("dir")
+        } else {
+            file_type = String::from("file");
         }
+
+        // checking if the file is a dotfile
+        let mut is_dot_file = false;
+        let split_file_path = file_path.split("/").collect::<Vec<&str>>();
+        if split_file_path[split_file_path.len() - 1]
+            .chars()
+            .next()
+            .unwrap()
+            == '.'
+        {
+            is_dot_file = true
+        }
+
         let file = FileData {
             file_path,
             file_type,
+            is_dot_file,
         };
-        root.push(file);
+        all_files.push(file);
     }
-    Ok(root)
+    Ok(all_files)
 }
 
-#[tauri::command]
-fn open_dir() {}
+// TODO: make reusable open dir function used when clicking dir in frontend and used in initial
+// read_fs
+// fn open_dir() {}
 
 fn main() {
     tauri::Builder::default()
