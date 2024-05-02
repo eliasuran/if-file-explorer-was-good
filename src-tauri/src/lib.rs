@@ -8,8 +8,12 @@ pub fn check_type(file: FileType) -> String {
 }
 
 pub fn check_dot(file: &str) -> bool {
-    let split_file_path = file.split("/").collect::<Vec<&str>>();
-    if split_file_path[split_file_path.len() - 1]
+    if file
+        .split("/")
+        .collect::<Vec<&str>>()
+        .last()
+        .unwrap()
+        .to_string()
         .chars()
         .next()
         .unwrap()

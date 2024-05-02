@@ -11,18 +11,46 @@ function App() {
       .then((files) => setFiles(files as FileData[]))
       .catch((err) => console.log(err));
   }, []);
+
   return (
     <main>
       <button onClick={() => setShowDotFiles(!showDotFiles)}>
         {showDotFiles ? 'hide' : 'show'} dotfiles
       </button>
       <div className='file-wrapper'>
+        <span
+          onClick={() =>
+            invoke('read_fs')
+              .then((data) => setFiles(data as FileData[]))
+              .catch((err) => console.log(err))
+          }
+        >
+          ..
+        </span>
         {files.map((file) => (
           <>
             {showDotFiles ? (
-              <span>{file.file_path}</span>
+              <span
+                onClick={() =>
+                  invoke('open_dir', { fullPath: file.full_path })
+                    .then((data) => setFiles(data as FileData[]))
+                    .catch((err) => console.log(err))
+                }
+              >
+                {file.name}
+              </span>
             ) : (
-              !file.is_dot_file && <span>{file.file_path}</span>
+              !file.is_dot_file && (
+                <span
+                  onClick={() =>
+                    invoke('open_dir', { fullPath: file.full_path })
+                      .then((data) => setFiles(data as FileData[]))
+                      .catch((err) => console.log(err))
+                  }
+                >
+                  {file.name}
+                </span>
+              )
             )}
           </>
         ))}

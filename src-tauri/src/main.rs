@@ -8,7 +8,8 @@ use serde::Serialize;
 
 #[derive(Serialize)]
 struct FileData {
-    file_path: String,
+    name: String,
+    full_path: String,
     file_type: String,
     is_dot_file: bool,
 }
@@ -29,7 +30,14 @@ fn read_fs() -> Result<Vec<FileData>, String> {
             Ok(v) => v,
             Err(e) => return Err(String::from(format!("Error getting entry in dir: {}", e))),
         };
-        let file_path = item.path().to_str().unwrap_or("ERROR").to_string();
+        let full_path = item.path().to_str().unwrap_or("ERROR").to_string();
+
+        let name = full_path
+            .split("/")
+            .collect::<Vec<&str>>()
+            .last()
+            .unwrap()
+            .to_string();
 
         let check_file_type = match item.file_type() {
             Ok(v) => v,
@@ -37,10 +45,11 @@ fn read_fs() -> Result<Vec<FileData>, String> {
         };
         let file_type = check_type(check_file_type);
 
-        let is_dot_file = check_dot(&file_path);
+        let is_dot_file = check_dot(&full_path);
 
         let file = FileData {
-            file_path,
+            name,
+            full_path,
             file_type,
             is_dot_file,
         };
@@ -49,11 +58,51 @@ fn read_fs() -> Result<Vec<FileData>, String> {
     Ok(all_files)
 }
 
-fn open_dir() {}
+#[tauri::command]
+fn open_dir(full_path: String) -> Result<Vec<FileData>, String> {
+    let mut files = vec![];
+
+    let dirs = match read_dir(full_path) {
+        Ok(v) => v,
+        Err(e) => return Err(String::from(format!("Error reading root {}", e))),
+    };
+
+    for entry in dirs {
+        let item = match entry {
+            Ok(v) => v,
+            Err(e) => return Err(String::from(format!("Error getting entry in dir: {}", e))),
+        };
+        let full_path = item.path().to_str().unwrap_or("ERROR").to_string();
+
+        let name = full_path
+            .split("/")
+            .collect::<Vec<&str>>()
+            .last()
+            .unwrap()
+            .to_string();
+
+        let check_file_type = match item.file_type() {
+            Ok(v) => v,
+            Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
+        };
+        let file_type = check_type(check_file_type);
+
+        let is_dot_file = check_dot(&full_path);
+
+        let file = FileData {
+            name,
+            full_path,
+            file_type,
+            is_dot_file,
+        };
+        files.push(file);
+    }
+    Ok(files)
+}
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![read_fs])
+        .invoke_handler(tauri::generate_handler![read_fs, open_dir])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
