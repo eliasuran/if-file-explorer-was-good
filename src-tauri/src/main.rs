@@ -3,6 +3,7 @@
 
 use std::{fs::read_dir, path::PathBuf};
 
+use rust_file_explorer::{check_dot, check_type};
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -30,28 +31,13 @@ fn read_fs() -> Result<Vec<FileData>, String> {
         };
         let file_path = item.path().to_str().unwrap_or("ERROR").to_string();
 
-        let file_type: String;
         let check_file_type = match item.file_type() {
             Ok(v) => v,
             Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
         };
-        if check_file_type.is_dir() {
-            file_type = String::from("dir")
-        } else {
-            file_type = String::from("file");
-        }
+        let file_type = check_type(check_file_type);
 
-        // checking if the file is a dotfile
-        let mut is_dot_file = false;
-        let split_file_path = file_path.split("/").collect::<Vec<&str>>();
-        if split_file_path[split_file_path.len() - 1]
-            .chars()
-            .next()
-            .unwrap()
-            == '.'
-        {
-            is_dot_file = true
-        }
+        let is_dot_file = check_dot(&file_path);
 
         let file = FileData {
             file_path,
@@ -63,9 +49,7 @@ fn read_fs() -> Result<Vec<FileData>, String> {
     Ok(all_files)
 }
 
-// TODO: make reusable open dir function used when clicking dir in frontend and used in initial
-// read_fs
-// fn open_dir() {}
+fn open_dir() {}
 
 fn main() {
     tauri::Builder::default()
