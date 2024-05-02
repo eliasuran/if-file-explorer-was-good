@@ -15,47 +15,17 @@ struct FileData {
 }
 
 #[tauri::command]
-fn read_fs() -> Result<Vec<FileData>, String> {
+fn read_root() -> Result<Vec<FileData>, String> {
     let path_buf = PathBuf::from(r"/Users/elura001/");
-
-    let mut all_files: Vec<FileData> = vec![];
-
-    let dirs = match read_dir(path_buf) {
-        Ok(v) => v,
-        Err(e) => return Err(String::from(format!("Error reading root {}", e))),
-    };
-
-    for entry in dirs {
-        let item = match entry {
-            Ok(v) => v,
-            Err(e) => return Err(String::from(format!("Error getting entry in dir: {}", e))),
-        };
-        let full_path = item.path().to_str().unwrap_or("ERROR").to_string();
-
-        let name = full_path
-            .split("/")
-            .collect::<Vec<&str>>()
-            .last()
-            .unwrap()
-            .to_string();
-
-        let check_file_type = match item.file_type() {
-            Ok(v) => v,
-            Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
-        };
-        let file_type = check_type(check_file_type);
-
-        let is_dot_file = check_dot(&full_path);
-
-        let file = FileData {
-            name,
-            full_path,
-            file_type,
-            is_dot_file,
-        };
-        all_files.push(file);
+    match open_dir("/Users/elura001/".to_string()) {
+        Ok(v) => Ok(v),
+        Err(e) => {
+            return Err(String::from(format!(
+                "Error reading root file system: {}",
+                e
+            )))
+        }
     }
-    Ok(all_files)
 }
 
 #[tauri::command]
@@ -81,11 +51,10 @@ fn open_dir(full_path: String) -> Result<Vec<FileData>, String> {
             .unwrap()
             .to_string();
 
-        let check_file_type = match item.file_type() {
-            Ok(v) => v,
+        let file_type = match item.file_type() {
+            Ok(v) => check_type(v, &full_path)?,
             Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
         };
-        let file_type = check_type(check_file_type);
 
         let is_dot_file = check_dot(&full_path);
 
@@ -100,9 +69,12 @@ fn open_dir(full_path: String) -> Result<Vec<FileData>, String> {
     Ok(files)
 }
 
+#[tauri::command]
+fn open_file(full_path: String) {}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![read_fs, open_dir])
+        .invoke_handler(tauri::generate_handler![read_root, open_dir])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

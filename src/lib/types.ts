@@ -1,6 +1,6 @@
 export interface FileData {
-  name: String;
-  full_path: String;
-  file_type: String;
+  name: string;
+  full_path: string;
+  file_type: string;
   is_dot_file: boolean;
 }

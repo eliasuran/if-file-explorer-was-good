@@ -26,3 +26,16 @@ main {
   flex-direction: column;
   gap: 4px;
 }
+
+.file-wrapper > button {
+  background-color: transparent;
+  border: none;
+
+  color: #f6f6f6;
+  font-size: 14px;
+
+  display: flex;
+  align-items: end;
+  gap: 4px;
+  cursor: pointer;
+}

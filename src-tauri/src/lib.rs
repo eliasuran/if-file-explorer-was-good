@@ -1,10 +1,21 @@
-use std::fs::FileType;
+use std::fs::{read_dir, read_link, FileType};
 
-pub fn check_type(file: FileType) -> String {
+pub fn check_type(file: FileType, path: &str) -> Result<String, String> {
     if file.is_dir() {
-        return String::from("dir");
-    };
-    String::from("file")
+        Ok(String::from("dir"))
+    } else if file.is_file() {
+        Ok(String::from("file"))
+    } else if file.is_symlink() {
+        match read_link(path) {
+            Ok(v) => {
+                let file = read_dir(path);
+                Ok("".to_string())
+            }
+            Err(e) => return Err(String::from(format!("Unable to read symlink: {}", e))),
+        }
+    } else {
+        Ok(String::from("unknown"))
+    }
 }
 
 pub fn check_dot(file: &str) -> bool {

@@ -1,13 +1,15 @@
 import { invoke } from '@tauri-apps/api/tauri';
 import { useEffect, useState } from 'react';
 import { FileData } from './lib/types';
+import { openDir } from './lib/uilts';
+import { Icon } from '@iconify/react';
 
 function App() {
   const [showDotFiles, setShowDotFiles] = useState(false);
   const [files, setFiles] = useState([] as FileData[]);
 
   useEffect(() => {
-    invoke('read_fs')
+    invoke('read_root')
       .then((files) => setFiles(files as FileData[]))
       .catch((err) => console.log(err));
   }, []);
@@ -18,43 +20,32 @@ function App() {
         {showDotFiles ? 'hide' : 'show'} dotfiles
       </button>
       <div className='file-wrapper'>
-        <span
+        <button
           onClick={() =>
-            invoke('read_fs')
+            invoke('read_root')
               .then((data) => setFiles(data as FileData[]))
               .catch((err) => console.log(err))
           }
         >
           ..
-        </span>
+        </button>
         {files.map((file) => (
-          <>
-            {showDotFiles ? (
-              <span
-                onClick={() =>
-                  invoke('open_dir', { fullPath: file.full_path })
-                    .then((data) => setFiles(data as FileData[]))
-                    .catch((err) => console.log(err))
-                }
-              >
-                {file.name}
-              </span>
-            ) : (
-              !file.is_dot_file && (
-                <span
-                  onClick={() =>
-                    invoke('open_dir', { fullPath: file.full_path })
-                      .then((data) => setFiles(data as FileData[]))
-                      .catch((err) => console.log(err))
-                  }
-                >
-                  {file.name}
-                </span>
-              )
-            )}
-          </>
+          <button onClick={() => openDir(file.full_path, setFiles)}>
+            <Icon
+              height={15}
+              icon={
+                file.file_type === 'file'
+                  ? 'ic:outline-insert-drive-file'
+                  : file.file_type === 'dir'
+                    ? 'ic:outline-folder'
+                    : 'ic:baseline-question-mark'
+              }
+            />
+            {file.name}
+          </button>
         ))}
       </div>
+      <div className='breadcrumb-wrapper'></div>
     </main>
   );
 }
