@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FileData } from './lib/types';
-import { findPath, openDir, openRoot } from './lib/utils';
+import { findPath, openDir, openFile, openRoot } from './lib/utils';
 import { Icon } from '@iconify/react';
 
 function App() {
@@ -22,7 +22,11 @@ function App() {
         {files.map((file) => (
           <button
             key={file.full_path}
-            onClick={() => openDir(file.full_path, setFiles, setCurrentPath)}
+            onClick={() =>
+              file.file_type === 'dir'
+                ? openDir(file.full_path, setFiles, setCurrentPath)
+                : openFile(file.full_path)
+            }
           >
             <Icon
               height={15}

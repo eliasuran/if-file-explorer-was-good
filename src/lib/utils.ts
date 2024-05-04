@@ -2,6 +2,12 @@ import { invoke } from '@tauri-apps/api';
 import { Dispatch, SetStateAction } from 'react';
 import { FileData, OpenDirReturn } from './types';
 
+export function openFile(path: string) {
+  invoke('open_file', { path })
+    .then((res) => console.log(res))
+    .catch((err) => console.log(err));
+}
+
 export function openDir(
   path: string,
   setFiles: Dispatch<SetStateAction<FileData[]>>,

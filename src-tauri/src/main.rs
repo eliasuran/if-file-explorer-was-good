@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::fs::read_dir;
+use std::{fs::read_dir, process::Command};
 
 use rust_file_explorer::{check_dot, check_type};
 use serde::Serialize;
@@ -79,9 +79,17 @@ fn open_dir(full_path: String) -> Result<OpenDirReturn, String> {
     Ok(return_value)
 }
 
+#[tauri::command]
+fn open_file(path: String) -> Result<String, String> {
+    match Command::new("open").args([path]).output() {
+        Ok(_) => Ok(String::from("Successfully opened file")),
+        Err(e) => Err(String::from(format!("Error opening file: {}", e))),
+    }
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![open_root, open_dir])
+        .invoke_handler(tauri::generate_handler![open_root, open_dir, open_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -25,7 +25,7 @@ main {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-bottom: 12px;
+  padding-bottom: 20px;
 }
 
 button {
@@ -44,7 +44,7 @@ button {
 }
 
 .breadcrumb-wrapper {
-  height: 20px;
+  min-height: 20px;
   width: 100%;
   border-top: #979797 1px solid;
   background-color: #2f2f2f;
@@ -52,6 +52,7 @@ button {
   font-size: 12px;
 
   display: flex;
+  flex-wrap: wrap; 
   align-items: center;
 
   position: fixed;
