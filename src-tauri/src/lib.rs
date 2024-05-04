@@ -11,12 +11,12 @@ pub fn check_type(file: FileType, path: &str) -> Result<String, String> {
             Err(e) => return Err(String::from(format!("Unable to read symlink: {}", e))),
         };
 
-        let metadata = match metadata(link_path) {
+        let metadata = match metadata(&link_path) {
             Ok(v) => v.file_type(),
             Err(e) => return Err(String::from(format!("Error getting metadata: {}", e))),
         };
 
-        match check_type(metadata, path) {
+        match check_type(metadata, link_path.to_str().unwrap()) {
             Ok(v) => return Ok(v),
             Err(e) => {
                 return Err(String::from(format!(

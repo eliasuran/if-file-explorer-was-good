@@ -1,10 +1,16 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs::read_dir, path::PathBuf};
+use std::fs::read_dir;
 
 use rust_file_explorer::{check_dot, check_type};
 use serde::Serialize;
+
+#[derive(Serialize)]
+struct OpenDirReturn {
+    current_path: String,
+    file_data: Vec<FileData>,
+}
 
 #[derive(Serialize)]
 struct FileData {
@@ -15,8 +21,7 @@ struct FileData {
 }
 
 #[tauri::command]
-fn read_root() -> Result<Vec<FileData>, String> {
-    let path_buf = PathBuf::from(r"/Users/elura001/");
+fn open_root() -> Result<OpenDirReturn, String> {
     match open_dir("/Users/elura001/".to_string()) {
         Ok(v) => Ok(v),
         Err(e) => {
@@ -29,12 +34,12 @@ fn read_root() -> Result<Vec<FileData>, String> {
 }
 
 #[tauri::command]
-fn open_dir(full_path: String) -> Result<Vec<FileData>, String> {
+fn open_dir(full_path: String) -> Result<OpenDirReturn, String> {
     let mut files = vec![];
 
-    let dirs = match read_dir(full_path) {
+    let dirs = match read_dir(&full_path) {
         Ok(v) => v,
-        Err(e) => return Err(String::from(format!("Error reading root {}", e))),
+        Err(e) => return Err(String::from(format!("Error reading directory {}", e))),
     };
 
     for entry in dirs {
@@ -66,15 +71,17 @@ fn open_dir(full_path: String) -> Result<Vec<FileData>, String> {
         };
         files.push(file);
     }
-    Ok(files)
-}
 
-#[tauri::command]
-fn open_file(full_path: String) {}
+    let return_value = OpenDirReturn {
+        current_path: full_path,
+        file_data: files,
+    };
+    Ok(return_value)
+}
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![read_root, open_dir])
+        .invoke_handler(tauri::generate_handler![open_root, open_dir])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

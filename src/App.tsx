@@ -1,17 +1,15 @@
-import { invoke } from '@tauri-apps/api/tauri';
 import { useEffect, useState } from 'react';
 import { FileData } from './lib/types';
-import { openDir } from './lib/uilts';
+import { openDir, openRoot } from './lib/utils';
 import { Icon } from '@iconify/react';
 
 function App() {
+  const [currentPath, setCurrentPath] = useState([] as string[]);
   const [showDotFiles, setShowDotFiles] = useState(false);
   const [files, setFiles] = useState([] as FileData[]);
 
   useEffect(() => {
-    invoke('read_root')
-      .then((files) => setFiles(files as FileData[]))
-      .catch((err) => console.log(err));
+    openRoot(setFiles, setCurrentPath);
   }, []);
 
   return (
@@ -20,17 +18,12 @@ function App() {
         {showDotFiles ? 'hide' : 'show'} dotfiles
       </button>
       <div className='file-wrapper'>
-        <button
-          onClick={() =>
-            invoke('read_root')
-              .then((data) => setFiles(data as FileData[]))
-              .catch((err) => console.log(err))
-          }
-        >
-          ..
-        </button>
+        <button onClick={() => openRoot(setFiles, setCurrentPath)}>..</button>
         {files.map((file) => (
-          <button onClick={() => openDir(file.full_path, setFiles)}>
+          <button
+            key={file.full_path}
+            onClick={() => openDir(file.full_path, setFiles, setCurrentPath)}
+          >
             <Icon
               height={15}
               icon={
@@ -45,7 +38,9 @@ function App() {
           </button>
         ))}
       </div>
-      <div className='breadcrumb-wrapper'></div>
+      <div className='breadcrumb-wrapper'>
+        {currentPath.filter((section) => section !== '').join(' - ')}
+      </div>
     </main>
   );
 }
