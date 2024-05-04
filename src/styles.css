@@ -28,11 +28,13 @@ main {
   padding-bottom: 12px;
 }
 
-.file-wrapper > button {
+button {
   background-color: transparent;
   border: none;
-
   color: #f6f6f6;
+}
+
+.file-wrapper > button {
   font-size: 14px;
 
   display: flex;
@@ -51,9 +53,13 @@ main {
 
   display: flex;
   align-items: center;
-  gap: 20px;
 
   position: fixed;
   bottom: 0px;
   left: 0px;
 }
+
+.breadcrumb-item:hover {
+  text-decoration: underline;
+  cursor: pointer;
+} 

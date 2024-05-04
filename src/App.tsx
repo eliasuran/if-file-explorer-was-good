@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FileData } from './lib/types';
-import { openDir, openRoot } from './lib/utils';
+import { findPath, openDir, openRoot } from './lib/utils';
 import { Icon } from '@iconify/react';
 
 function App() {
@@ -39,7 +39,23 @@ function App() {
         ))}
       </div>
       <div className='breadcrumb-wrapper'>
-        {currentPath.filter((section) => section !== '').join(' - ')}
+        {currentPath.map(
+          (section, index) =>
+            section !== '' && (
+              <div key={index}>
+                <button
+                  onClick={() => {
+                    const path = findPath(section, currentPath);
+                    openDir(path, setFiles, setCurrentPath);
+                  }}
+                  className='breadcrumb-item'
+                >
+                  {section}
+                </button>
+                {index !== currentPath.length - 1 && <span>-</span>}
+              </div>
+            ),
+        )}
       </div>
     </main>
   );

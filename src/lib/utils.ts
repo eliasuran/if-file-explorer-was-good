@@ -28,3 +28,12 @@ export function openRoot(
     })
     .catch((err) => console.log(err));
 }
+
+export function findPath(selected: string, fullPath: string[]): string {
+  for (let i in fullPath) {
+    if (fullPath[i] === selected) {
+      return fullPath.join('/').split(selected)[0] + selected + '/';
+    }
+  }
+  return '';
+}
