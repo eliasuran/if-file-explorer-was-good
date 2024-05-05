@@ -22,7 +22,8 @@ struct FileData {
 
 #[tauri::command]
 fn open_root() -> Result<OpenDirReturn, String> {
-    match open_dir("/Users/elura001/".to_string()) {
+    let user = whoami::username();
+    match open_dir(format!("/Users/{}", user)) {
         Ok(v) => Ok(v),
         Err(e) => {
             return Err(String::from(format!(
