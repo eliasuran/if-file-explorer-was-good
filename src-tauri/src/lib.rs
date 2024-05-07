@@ -2,6 +2,16 @@ use std::fs::{metadata, read_link, FileType};
 
 use walkdir::DirEntry;
 
+pub fn get_file_name(full_path: &str) -> String {
+    let name = full_path
+        .split("/")
+        .collect::<Vec<&str>>()
+        .last()
+        .unwrap()
+        .to_string();
+    name.to_string()
+}
+
 pub fn check_type(file: FileType, path: &str) -> Result<String, String> {
     if file.is_dir() {
         Ok(String::from("dir"))

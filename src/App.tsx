@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FileData } from './lib/types';
 import { findPath, openDir, openFile, openRoot } from './lib/utils';
 import { Icon } from '@iconify/react';
+import Search from './components/Search';
 
 function App() {
   const [currentPath, setCurrentPath] = useState([] as string[]);
@@ -14,6 +15,7 @@ function App() {
 
   return (
     <main>
+      <Search path={currentPath} setFiles={setFiles} />
       <button onClick={() => setShowDotFiles(!showDotFiles)}>
         {showDotFiles ? 'hide' : 'show'} dotfiles
       </button>
@@ -25,7 +27,9 @@ function App() {
             onClick={() =>
               file.file_type === 'dir'
                 ? openDir(file.full_path, setFiles, setCurrentPath)
-                : openFile(file.full_path)
+                : file.file_type === 'file'
+                  ? openFile(file.full_path)
+                  : console.log('Unknown file, cannot open')
             }
           >
             <Icon

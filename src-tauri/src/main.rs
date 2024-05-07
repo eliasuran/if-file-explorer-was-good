@@ -3,7 +3,7 @@
 
 use std::{fs::read_dir, process::Command};
 
-use rust_file_explorer::{check_dot, check_type, is_hidden, is_node_module};
+use rust_file_explorer::{check_dot, check_type, get_file_name, is_hidden, is_node_module};
 use serde::Serialize;
 use walkdir::WalkDir;
 
@@ -51,16 +51,11 @@ fn open_dir(full_path: String) -> Result<OpenDirReturn, String> {
         };
         let full_path = item.path().to_str().unwrap_or("ERROR").to_string();
 
-        let name = full_path
-            .split("/")
-            .collect::<Vec<&str>>()
-            .last()
-            .unwrap()
-            .to_string();
+        let name = get_file_name(&full_path);
 
         let file_type = match item.file_type() {
             Ok(v) => check_type(v, &full_path)?,
-            Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
+            Err(e) => return Err(String::from(format!("Error reading file type: {}", e))),
         };
 
         let is_dot_file = check_dot(&name);
@@ -90,24 +85,43 @@ fn open_file(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn search(q: String, path: String) -> String {
+fn search(q: String, path: String) -> Vec<FileData> {
+    let mut files = vec![];
+
     for entry in WalkDir::new(path)
         .into_iter()
         .filter_entry(|e| !is_hidden(e) && !is_node_module(e))
     {
         let file = match entry {
-            Ok(v) => v.path().display().to_string(),
+            Ok(v) => v,
             Err(e) => {
                 eprintln!("Error reading file: {}", e);
                 continue;
             }
         };
-        println!("{}", file);
-        if file.contains(&q) {
-            return String::from(format!("Found match: {}", file));
+        let full_path = file.path().display().to_string();
+        let name = get_file_name(&full_path);
+        let file_type = check_type(file.file_type(), &full_path).unwrap_or("unknown".to_string());
+        println!("{}", full_path);
+        if full_path.contains(&q) {
+            let file_data = FileData {
+                full_path,
+                name,
+                is_dot_file: false,
+                file_type,
+            };
+            files.push(file_data);
+            return files;
         }
     }
-    return String::from("No file found");
+    let file_data = FileData {
+        full_path: String::from(""),
+        file_type: String::from("unknown"),
+        is_dot_file: false,
+        name: String::from("No files found"),
+    };
+    files.push(file_data);
+    files
 }
 
 fn main() {
