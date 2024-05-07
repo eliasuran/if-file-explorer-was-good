@@ -1,5 +1,7 @@
 use std::fs::{metadata, read_link, FileType};
 
+use walkdir::DirEntry;
+
 pub fn check_type(file: FileType, path: &str) -> Result<String, String> {
     if file.is_dir() {
         Ok(String::from("dir"))
@@ -45,4 +47,21 @@ pub fn check_dot(file: &str) -> bool {
         return true;
     }
     false
+}
+
+// for walkdir
+pub fn is_hidden(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s.starts_with("."))
+        .unwrap_or(false)
+}
+
+pub fn is_node_module(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s == "node_modules")
+        .unwrap_or(false)
 }

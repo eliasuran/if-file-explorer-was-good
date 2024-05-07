@@ -3,8 +3,9 @@
 
 use std::{fs::read_dir, process::Command};
 
-use rust_file_explorer::{check_dot, check_type};
+use rust_file_explorer::{check_dot, check_type, is_hidden, is_node_module};
 use serde::Serialize;
+use walkdir::WalkDir;
 
 #[derive(Serialize)]
 struct OpenDirReturn {
@@ -62,7 +63,7 @@ fn open_dir(full_path: String) -> Result<OpenDirReturn, String> {
             Err(e) => return Err(String::from(format!("Error readinf file type: {}", e))),
         };
 
-        let is_dot_file = check_dot(&full_path);
+        let is_dot_file = check_dot(&name);
 
         let file = FileData {
             name,
@@ -88,9 +89,32 @@ fn open_file(path: String) -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+fn search(q: String, path: String) -> String {
+    for entry in WalkDir::new(path)
+        .into_iter()
+        .filter_entry(|e| !is_hidden(e) && !is_node_module(e))
+    {
+        let file = match entry {
+            Ok(v) => v.path().display().to_string(),
+            Err(e) => {
+                eprintln!("Error reading file: {}", e);
+                continue;
+            }
+        };
+        println!("{}", file);
+        if file.contains(&q) {
+            return String::from(format!("Found match: {}", file));
+        }
+    }
+    return String::from("No file found");
+}
+
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![open_root, open_dir, open_file])
+        .invoke_handler(tauri::generate_handler![
+            open_root, open_dir, open_file, search
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
