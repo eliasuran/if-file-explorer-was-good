@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api';
 import { Dispatch, SetStateAction, useState } from 'react';
 import { FileData } from '../lib/types';
+import { listen } from '@tauri-apps/api/event';
 
 export default function Search(props: {
   path: string[];
@@ -11,14 +12,23 @@ export default function Search(props: {
     <form
       onSubmit={(e) => {
         e.preventDefault();
-        invoke('search', { q, path: props.path.join('/') }).then((res) => {
-          const data = res as FileData[];
-
-          props.setFiles(data);
-        });
+        invoke('search_files', { q, path: props.path.join('/') });
+        startSerialEventListener(props.setFiles);
       }}
     >
       <input type='text' onChange={(e) => setQ(e.target.value)} className='' />
     </form>
   );
+}
+
+interface Payload {
+  data: FileData[];
+}
+
+async function startSerialEventListener(
+  setFiles: Dispatch<SetStateAction<FileData[]>>,
+) {
+  await listen<Payload>('incoming-data', (event) => {
+    setFiles(event.payload.data);
+  });
 }

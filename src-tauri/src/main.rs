@@ -5,6 +5,7 @@ use std::{fs::read_dir, process::Command};
 
 use rust_file_explorer::{check_dot, check_type, get_file_name, is_hidden, is_node_module};
 use serde::Serialize;
+use tauri::Manager;
 use walkdir::WalkDir;
 
 #[derive(Serialize)]
@@ -13,7 +14,7 @@ struct OpenDirReturn {
     file_data: Vec<FileData>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 struct FileData {
     name: String,
     full_path: String,
@@ -124,10 +125,65 @@ fn search(q: String, path: String) -> Vec<FileData> {
     files
 }
 
+#[derive(Clone, Serialize)]
+struct Payload {
+    data: Vec<FileData>,
+}
+
+// remaking search command
+#[tauri::command]
+async fn search_files(
+    q: String,
+    path: String,
+    app: tauri::AppHandle,
+) -> Result<Vec<FileData>, String> {
+    let mut results = vec![];
+    let mut walker = WalkDir::new(path).into_iter();
+
+    while let Some(entry) = walker.next() {
+        let entry = match entry {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("Error getting entry: {}", e);
+                continue;
+            }
+        };
+
+        let full_path = entry.path().display().to_string();
+        println!("{}", full_path);
+        if full_path.contains(&q) {
+            let name = get_file_name(&full_path);
+            let file_type =
+                check_type(entry.file_type(), &full_path).unwrap_or("unknown".to_string());
+
+            let file_data = FileData {
+                full_path,
+                name,
+                file_type,
+                is_dot_file: false,
+            };
+            results.push(file_data.clone());
+
+            app.emit_all(
+                "incoming-data",
+                Payload {
+                    data: results.clone(),
+                },
+            )
+            .map_err(|e| String::from(format!("Error getting data: {}", e)))?
+        }
+    }
+    Ok(results)
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            open_root, open_dir, open_file, search
+            open_root,
+            open_dir,
+            open_file,
+            search,
+            search_files
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
