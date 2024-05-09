@@ -3,7 +3,9 @@
 
 use std::{fs::read_dir, process::Command};
 
-use rust_file_explorer::{check_dot, check_type, get_file_name, is_hidden, is_node_module};
+use rust_file_explorer::{
+    check_dot, check_type, get_file_name, is_hidden, is_node_module, is_onedrive,
+};
 use serde::Serialize;
 use tauri::Manager;
 use walkdir::WalkDir;
@@ -85,60 +87,19 @@ fn open_file(path: String) -> Result<String, String> {
     }
 }
 
-#[tauri::command]
-fn search(q: String, path: String) -> Vec<FileData> {
-    let mut files = vec![];
-
-    for entry in WalkDir::new(path)
-        .into_iter()
-        .filter_entry(|e| !is_hidden(e) && !is_node_module(e))
-    {
-        let file = match entry {
-            Ok(v) => v,
-            Err(e) => {
-                eprintln!("Error reading file: {}", e);
-                continue;
-            }
-        };
-        let full_path = file.path().display().to_string();
-        let name = get_file_name(&full_path);
-        let file_type = check_type(file.file_type(), &full_path).unwrap_or("unknown".to_string());
-        println!("{}", full_path);
-        if full_path.contains(&q) {
-            let file_data = FileData {
-                full_path,
-                name,
-                is_dot_file: false,
-                file_type,
-            };
-            files.push(file_data);
-            return files;
-        }
-    }
-    let file_data = FileData {
-        full_path: String::from(""),
-        file_type: String::from("unknown"),
-        is_dot_file: false,
-        name: String::from("No files found"),
-    };
-    files.push(file_data);
-    files
-}
-
 #[derive(Clone, Serialize)]
 struct Payload {
     data: Vec<FileData>,
+    done: bool,
 }
 
-// remaking search command
+// search command returning files as they are found
 #[tauri::command]
-async fn search_files(
-    q: String,
-    path: String,
-    app: tauri::AppHandle,
-) -> Result<Vec<FileData>, String> {
+async fn search_files(q: String, path: String, app: tauri::AppHandle) -> Result<(), String> {
     let mut results = vec![];
-    let mut walker = WalkDir::new(path).into_iter();
+    let mut walker = WalkDir::new(path)
+        .into_iter()
+        .filter_entry(|e| !is_hidden(e) && !is_node_module(e) && !is_onedrive(e));
 
     while let Some(entry) = walker.next() {
         let entry = match entry {
@@ -168,12 +129,24 @@ async fn search_files(
                 "incoming-data",
                 Payload {
                     data: results.clone(),
+                    done: false,
                 },
             )
             .map_err(|e| String::from(format!("Error getting data: {}", e)))?
         }
     }
-    Ok(results)
+    app.emit_all(
+        "incoming-data",
+        Payload {
+            data: results.clone(),
+            done: true,
+        },
+    )
+    .map_err(|e| String::from(format!("Error getting data: {}", e)))?;
+
+    println!("Done searching");
+
+    Ok(())
 }
 
 fn main() {
@@ -182,7 +155,6 @@ fn main() {
             open_root,
             open_dir,
             open_file,
-            search,
             search_files
         ])
         .run(tauri::generate_context!())

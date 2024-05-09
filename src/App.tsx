@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { FileData } from './lib/types';
-import { findPath, openDir, openFile, openRoot } from './lib/utils';
-import { Icon } from '@iconify/react';
+import { findPath, openDir, openRoot } from './lib/utils';
 import Search from './components/Search';
+import File from './components/File';
 
 function App() {
   const [currentPath, setCurrentPath] = useState([] as string[]);
@@ -22,28 +22,12 @@ function App() {
       <div className='file-wrapper'>
         <button onClick={() => openRoot(setFiles, setCurrentPath)}>..</button>
         {files.map((file) => (
-          <button
+          <File
             key={file.full_path}
-            onClick={() =>
-              file.file_type === 'dir'
-                ? openDir(file.full_path, setFiles, setCurrentPath)
-                : file.file_type === 'file'
-                  ? openFile(file.full_path)
-                  : console.log('Unknown file, cannot open')
-            }
-          >
-            <Icon
-              height={15}
-              icon={
-                file.file_type === 'file'
-                  ? 'ic:outline-insert-drive-file'
-                  : file.file_type === 'dir'
-                    ? 'ic:outline-folder'
-                    : 'ic:baseline-question-mark'
-              }
-            />
-            {file.name}
-          </button>
+            data={file}
+            setFiles={setFiles}
+            setCurrentPath={setCurrentPath}
+          />
         ))}
       </div>
       <div className='breadcrumb-wrapper'>

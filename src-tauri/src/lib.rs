@@ -75,3 +75,11 @@ pub fn is_node_module(entry: &DirEntry) -> bool {
         .map(|s| s == "node_modules")
         .unwrap_or(false)
 }
+
+pub fn is_onedrive(entry: &DirEntry) -> bool {
+    entry
+        .file_name()
+        .to_str()
+        .map(|s| s == "OneDrive-Osloskolen")
+        .unwrap_or(false)
+}

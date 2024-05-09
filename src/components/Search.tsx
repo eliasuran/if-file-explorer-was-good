@@ -10,7 +10,7 @@ export default function Search(props: {
   const [q, setQ] = useState('');
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         invoke('search_files', { q, path: props.path.join('/') });
         startSerialEventListener(props.setFiles);
@@ -23,12 +23,19 @@ export default function Search(props: {
 
 interface Payload {
   data: FileData[];
+  done: boolean;
 }
 
 async function startSerialEventListener(
   setFiles: Dispatch<SetStateAction<FileData[]>>,
 ) {
-  await listen<Payload>('incoming-data', (event) => {
+  const unlisten = await listen<Payload>('incoming-data', (event) => {
+    if (event.payload.done) {
+      console.log('Done searching');
+      unlisten;
+      return;
+    }
     setFiles(event.payload.data);
   });
+  return unlisten;
 }
