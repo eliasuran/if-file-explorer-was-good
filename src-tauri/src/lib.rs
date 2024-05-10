@@ -1,6 +1,13 @@
 use std::fs::{metadata, read_link, FileType};
-
+use sysinfo::System;
 use walkdir::DirEntry;
+
+fn get_windows_disks() {
+    let mut sys = System::new_all();
+    sys.refresh_all();
+
+    // let volumes = sys.disks().iter().map(|disk| println!("{}", disk));
+}
 
 pub fn get_root_dir(os: &str, user: &str) -> String {
     if os == "macos" {

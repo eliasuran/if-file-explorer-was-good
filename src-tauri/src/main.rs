@@ -1,7 +1,7 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{env, fs::read_dir, process::Command};
+use std::{env, fs::read_dir, process::Command, time::SystemTime};
 
 use rust_file_explorer::{
     check_dot, check_type, get_file_name, get_root_dir, is_hidden, is_node_module, is_onedrive,
@@ -101,6 +101,8 @@ struct Payload {
 // search command returning files as they are found
 #[tauri::command]
 async fn search_files(q: String, path: String, app: tauri::AppHandle) -> Result<(), String> {
+    let start = SystemTime::now();
+
     let mut results = vec![];
     let mut walker = WalkDir::new(path)
         .into_iter()
@@ -149,7 +151,12 @@ async fn search_files(q: String, path: String, app: tauri::AppHandle) -> Result<
     )
     .map_err(|e| String::from(format!("Error getting data: {}", e)))?;
 
-    println!("Done searching");
+    let done = SystemTime::now();
+
+    let elapsed = done.duration_since(start).unwrap();
+
+    println!("Done searching, elapsed time: {}", elapsed.as_secs_f64());
+
 
     Ok(())
 }
