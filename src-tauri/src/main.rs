@@ -1,10 +1,10 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::{fs::read_dir, process::Command};
+use std::{env, fs::read_dir, process::Command};
 
 use rust_file_explorer::{
-    check_dot, check_type, get_file_name, is_hidden, is_node_module, is_onedrive,
+    check_dot, check_type, get_file_name, get_root_dir, is_hidden, is_node_module, is_onedrive,
 };
 use serde::Serialize;
 use tauri::Manager;
@@ -27,7 +27,12 @@ struct FileData {
 #[tauri::command]
 fn open_root() -> Result<OpenDirReturn, String> {
     let user = whoami::username();
-    match open_dir(format!("/Users/{}", user)) {
+    let os = env::consts::OS;
+    println!("user {} on os {}", user, os);
+
+    let root_dir = get_root_dir(os, &user);
+
+    match open_dir(root_dir) {
         Ok(v) => Ok(v),
         Err(e) => {
             return Err(String::from(format!(

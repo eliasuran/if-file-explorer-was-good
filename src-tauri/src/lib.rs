@@ -2,6 +2,15 @@ use std::fs::{metadata, read_link, FileType};
 
 use walkdir::DirEntry;
 
+pub fn get_root_dir(os: &str, user: &str) -> String {
+    if os == "macos" {
+        return format!("/Users/{}", user);
+    } else if os == "windows" {
+        return r"C:\".to_string();
+    }
+    "/".to_string()
+}
+
 pub fn get_file_name(full_path: &str) -> String {
     let name = full_path
         .split("/")
