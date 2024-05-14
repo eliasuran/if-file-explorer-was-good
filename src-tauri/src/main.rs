@@ -98,6 +98,18 @@ struct Payload {
     done: bool,
 }
 
+fn emit_last_data(results: Vec<FileData>, app: tauri::AppHandle) -> Result<(), String> {
+    app.emit_all(
+        "incoming-data",
+        Payload {
+            data: results.clone(),
+            done: true,
+        },
+    )
+    .map_err(|e| String::from(format!("Error getting data: {}", e)))?;
+    Ok(())
+}
+
 // search command returning files as they are found
 #[tauri::command]
 async fn search_files(q: String, path: String, app: tauri::AppHandle) -> Result<(), String> {
@@ -137,17 +149,16 @@ async fn search_files(q: String, path: String, app: tauri::AppHandle) -> Result<
                     done: false,
                 },
             )
-            .map_err(|e| String::from(format!("Error getting data: {}", e)))?
+            .map_err(|e| String::from(format!("Error getting data: {}", e)))?;
+
+            if results.len() == 500 {
+                emit_last_data(results, app)?;
+                println!("Limit reached");
+                return Ok(());
+            };
         }
     }
-    app.emit_all(
-        "incoming-data",
-        Payload {
-            data: results.clone(),
-            done: true,
-        },
-    )
-    .map_err(|e| String::from(format!("Error getting data: {}", e)))?;
+    emit_last_data(results, app)?;
 
     println!("Done searching");
 
